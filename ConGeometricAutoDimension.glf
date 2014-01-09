@@ -46,7 +46,7 @@ set beginspacing  ""
 set endspacing    ""
 set maxspacing    ""
 set growthratio   ""
-set gridlevels    ""
+set gridlevels    "1"
 
 lappend infoMessages "Begin by selecting a connector.\n"
 lappend infoMessages "To undo, click \"Done\" and undo in PW."
@@ -293,106 +293,106 @@ proc pickCon { } {
 ############################################################################
 proc autoDim { } {
 
-	global Con infoMessage
-	
-	if {![info exists Con] || ![colorCheck]} { exit }
-	
-	set length [$Con getTotalLength]
-	
-	#**********************************
-	# Get these user inputs from a Tk interface
-	global beginspacing
-	global endspacing
-	global maxspacing
-	global growthratio
-	global gridlevels
-	#**********************************
-	
-	set infoMessages ""
-	set errorMessages ""
-	
-	lappend infoMessages "--------------------------------------\n"
-	lappend infoMessages "[$Con getName] statistics\n"
-	lappend infoMessages "--------------------------------------\n"
-	
-	# Calculate number of begin layers
-	if { $beginspacing > 0.0 && $beginspacing < $maxspacing } {
-	    set beginlayers [expr 1 + int(log($maxspacing / $beginspacing) / log($growthratio))]
-	    lappend infoMessages "Begin growth layers (cells) = $beginlayers\n"
-	} else {
-	    set beginlayers 0
-	    lappend errorMessages "No spacing set at start of connector!\n"
-	}
-	
-	# Calculate number of end layers
-	if { $endspacing > 0.0 && $endspacing < $maxspacing } {
-	    set endlayers [expr 1 + int(log($maxspacing / $endspacing) / log($growthratio))]
-	    lappend infoMessages "End growth layers (cells) = $endlayers\n"
-	} else {
-	    set endlayers 0
-	    lappend errorMessages "No spacing set at end of connector!\n"
-	}
-	
-	# Calculate total length of begin layers
-	if { $beginlayers > 0 } {
-	    set beginheight [expr $beginspacing * (1 - pow($growthratio,$beginlayers)) / (1 - $growthratio)]
-	    lappend infoMessages [format "Begin layer height = %.2f\n" $beginheight]
-	} else {
-	    set beginheight 0
-	}
-	
-	# Calculate total length of end layers
-	if { $endlayers > 0 } {
-	    set endheight [expr $endspacing * (1 - pow($growthratio,$endlayers)) / (1 - $growthratio)]
-	    lappend infoMessages [format "End layer height = %.2f\n" $endheight]
-	} else {
-	    set endheight 0
-	}
-	
-	# Check validity of inputs relative to the length of the connector
-	if { [expr $beginheight + $endheight] > $length } {
-	    lappend errorMessages "Error: Layer height is greater than connector length!\n"
-	    lappend errorMessages "Increase growth rate!\n"
+    global Con infoMessage
+    
+    if {![info exists Con] || ![colorCheck]} { exit }
+    
+    set length [$Con getTotalLength]
+    
+    #**********************************
+    # Get these user inputs from a Tk interface
+    global beginspacing
+    global endspacing
+    global maxspacing
+    global growthratio
+    global gridlevels
+    #**********************************
+    
+    set infoMessages ""
+    set errorMessages ""
+    
+    lappend infoMessages "--------------------------------------\n"
+    lappend infoMessages "[$Con getName] statistics\n"
+    lappend infoMessages "--------------------------------------\n"
+    
+    # Calculate number of begin layers
+    if { $beginspacing > 0.0 && $beginspacing < $maxspacing } {
+        set beginlayers [expr 1 + int(log($maxspacing / $beginspacing) / log($growthratio))]
+        lappend infoMessages "Begin growth layers (cells) = $beginlayers\n"
     } else {
-	
-	    # Calculate initial connector dimension
-	    set ConDim [expr 2 + $beginlayers + $endlayers + int(($length-$beginheight-$endheight)/$maxspacing)]
-	    lappend infoMessages "Initial connector dimension = $ConDim\n"
-	
-	    # Possibly increase the dimension for grid sequencing
-	    set factor [expr pow(2,($gridlevels-1))]
-	    while {[expr fmod($ConDim-1,$factor)] != 0} { incr ConDim }
-	
-	    # Include the following information whether or not the dimension was actually adjusted.
-	    # This informs the user if the final dimension was the optimal dimension (no clustering towards the middle).
-	    if { $gridlevels > 1 } { lappend infoMessages "Adjusted connector dimension = $ConDim" }
-	
-	    # Dimension the connector
-	    $Con setDimension $ConDim
-	
-	    # Set the distribution
-	    $Con setDistribution 1 [pw::DistributionGrowth create]
-	    if { $beginheight > 0 } {
-	        [$Con getDistribution 1] setBeginSpacing $beginspacing
-	        [$Con getDistribution 1] setBeginRate    $growthratio
-	        [$Con getDistribution 1] setBeginLayers  $beginlayers
-	    }
-	    if { $endheight > 0 } {
-	        [$Con getDistribution 1] setEndSpacing $endspacing
-	        [$Con getDistribution 1] setEndRate    $growthratio
-	        [$Con getDistribution 1] setEndLayers  $endlayers
-	    }
+        set beginlayers 0
+        lappend errorMessages "No spacing set at start of connector!\n"
+    }
+    
+    # Calculate number of end layers
+    if { $endspacing > 0.0 && $endspacing < $maxspacing } {
+        set endlayers [expr 1 + int(log($maxspacing / $endspacing) / log($growthratio))]
+        lappend infoMessages "End growth layers (cells) = $endlayers\n"
+    } else {
+        set endlayers 0
+        lappend errorMessages "No spacing set at end of connector!\n"
+    }
+    
+    # Calculate total length of begin layers
+    if { $beginlayers > 0 } {
+        set beginheight [expr $beginspacing * (1 - pow($growthratio,$beginlayers)) / (1 - $growthratio)]
+        lappend infoMessages [format "Begin layer height = %.2f\n" $beginheight]
+    } else {
+        set beginheight 0
+    }
+    
+    # Calculate total length of end layers
+    if { $endlayers > 0 } {
+        set endheight [expr $endspacing * (1 - pow($growthratio,$endlayers)) / (1 - $growthratio)]
+        lappend infoMessages [format "End layer height = %.2f\n" $endheight]
+    } else {
+        set endheight 0
+    }
+    
+    # Check validity of inputs relative to the length of the connector
+    if { [expr $beginheight + $endheight] > $length } {
+        lappend errorMessages "Error: Layer height is greater than connector length!\n"
+        lappend errorMessages "Increase growth rate!\n"
+    } else {
+    
+        # Calculate initial connector dimension
+        set ConDim [expr 2 + $beginlayers + $endlayers + int(($length-$beginheight-$endheight)/$maxspacing)]
+        lappend infoMessages "Initial connector dimension = $ConDim\n"
+    
+        # Possibly increase the dimension for grid sequencing
+        set factor [expr pow(2,($gridlevels-1))]
+        while {[expr fmod($ConDim-1,$factor)] != 0} { incr ConDim }
+    
+        # Include the following information whether or not the dimension was actually adjusted.
+        # This informs the user if the final dimension was the optimal dimension (no clustering towards the middle).
+        if { $gridlevels > 1 } { lappend infoMessages "Adjusted connector dimension = $ConDim" }
+    
+        # Dimension the connector
+        $Con setDimension $ConDim
+    
+        # Set the distribution
+        $Con setDistribution 1 [pw::DistributionGrowth create]
+        if { $beginheight > 0 } {
+            [$Con getDistribution 1] setBeginSpacing $beginspacing
+            [$Con getDistribution 1] setBeginRate    $growthratio
+            [$Con getDistribution 1] setBeginLayers  $beginlayers
+        }
+        if { $endheight > 0 } {
+            [$Con getDistribution 1] setEndSpacing $endspacing
+            [$Con getDistribution 1] setEndRate    $growthratio
+            [$Con getDistribution 1] setEndLayers  $endlayers
+        }
     
     }
-	
-	if [llength $errorMessages] {
-	    set allMessages [join [list $errorMessages $infoMessages]]
-	    set infoMessage [join $allMessages ""]
-	} else {
-	    set infoMessage [join $infoMessages ""]
-	}
-	
-	pw::Display update
+    
+    if [llength $errorMessages] {
+        set allMessages [join [list $errorMessages $infoMessages]]
+        set infoMessage [join $allMessages ""]
+    } else {
+        set infoMessage [join $infoMessages ""]
+    }
+    
+    pw::Display update
 
 }
 
@@ -414,7 +414,7 @@ proc done {} {
 .f.espce configure -background #EBAD99
 .f.mspce configure -background #EBAD99
 .f.gre   configure -background #EBAD99
-.f.gle   configure -background #EBAD99
+#.f.gle   configure -background #EBAD99
 
 .f.bspce configure -validate all -vcmd {validateParams %P %W}
 .f.espce configure -validate all -vcmd {validateParams %P %W}
