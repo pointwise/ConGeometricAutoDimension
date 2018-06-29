@@ -206,26 +206,28 @@ proc validateParams {u widget} {
 
     updateStates
     return true
-
 } 
 
 ############################################################################
 # pickCon: select connector to dimension and distribute
 ############################################################################
-proc pickCon { } {
+proc pickCon { { firstRun false } } {
 
-    wm state . withdrawn
     global Con PoleCon beginspacing endspacing maxspacing infoMessage
-
+    
     # Turn off nodes if a connector is already selected
     if [info exists Con] { $Con setRenderAttribute PointMode None }
 
     # If a pole had been created (for the previous connector), delete it
     if [info exists PoleCon] { $PoleCon delete }
 
-    set conMask [pw::Display createSelectionMask -requireConnector {} -blockConnector {Pole}]
-    pw::Display selectEntities -selectionmask $conMask -description "Select a connector." -single results
-    set Con $results(Connectors); # Get the connector from the resultVar array
+    # If this is run at startup and a valid connector was selected, don't run this piece 
+    if { !$firstRun } {
+        wm state . withdrawn
+        set conMask [pw::Display createSelectionMask -requireConnector {} -blockConnector {Pole}]
+        pw::Display selectEntities -selectionmask $conMask -description "Select a connector." -single results
+        set Con $results(Connectors); # Get the connector from the resultVar array
+    }
 
     if {[llength $Con] == 1} {
 
@@ -240,10 +242,6 @@ proc pickCon { } {
             set conEndX [lindex $conEnd 0]
             set conEndY [lindex $conEnd 1]
             set conEndZ [lindex $conEnd 2]
-
-        #set beginspacing 0
-        #set endspacing   0
-        #set maxspacing   0
 
         if { $dim > 2 } {                          ; # If the connector was previously dimensioned, determine
             for {set i 2} {$i <= $dim} {incr i} {  ; # begin, end, and max spacings to 5 decimal places
@@ -285,7 +283,7 @@ proc pickCon { } {
     raise .
     pw::Display update
     updateStates
-
+    set firstRun 0
 }
 
 ############################################################################
@@ -393,7 +391,6 @@ proc autoDim { } {
     }
     
     pw::Display update
-
 }
 
 ############################################################################
@@ -407,7 +404,6 @@ proc done {} {
     if [info exists PoleCon] { $PoleCon delete }
 
     exit
-
 }
 
 .f.bspce configure -background #EBAD99
@@ -423,6 +419,16 @@ proc done {} {
 .f.gle   configure -validate all -vcmd {validateParams %P %W}
 
 updateStates
+
+##################################################################################################
+# Attempt to retrieve any connectors that were selected before script started
+##################################################################################################
+
+pw::Display getSelectedEntities ents
+if { [llength $ents(Connectors)] == 1} {
+  set Con $ents(Connectors)
+  pickCon true
+}
 
 #
 # END SCRIPT
