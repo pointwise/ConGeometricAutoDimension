@@ -1,6 +1,6 @@
-# 
+#
 # This sample script is not supported by Pointwise, Inc.
-# It is provided freely for demonstration purposes only.  
+# It is provided freely for demonstration purposes only.
 # SEE THE WARRANTY DISCLAIMER AT THE BOTTOM OF THIS FILE.
 #
 ############################################################################
@@ -25,7 +25,7 @@
 #
 # The required dimension will be determined and then increased, if requested,
 #   to facilitate grid sequencing.
-#   
+#
 # There is no "Cancel" or undo internal to the script.
 #   If you don't like what happens, click "Done" and undo the script
 #   execution directly in Pointwise.
@@ -98,15 +98,15 @@ proc updateStates {} {
         .f.mspce configure -state normal
         .f.gre   configure -state normal
         .f.gle   configure -state normal
-    
+
         if [colorCheck] {
             .f.ab configure -state enabled
         } else {
             .f.ab configure -state disabled
         }
-    
+
     } else {
-    
+
         .f.scb   configure -state enabled
         .f.bspce configure -state disabled
         .f.espce configure -state disabled
@@ -114,7 +114,7 @@ proc updateStates {} {
         .f.gre   configure -state disabled
         .f.gle   configure -state disabled
         .f.ab    configure -state disabled
-    
+
     }
 
 }
@@ -194,7 +194,7 @@ proc validateParams {u widget} {
 
     # Grid levels
     if {$widget == ".f.gle"} {
-        if {[llength $u] == 1 && [string is double -strict $u] && 
+        if {[llength $u] == 1 && [string is double -strict $u] &&
             (($u == 1) || ($u == 2) || ($u == 3) || ($u == 4))} {
             $widget configure -background white
             set infoMessage "Enter number of grid levels."
@@ -206,7 +206,7 @@ proc validateParams {u widget} {
 
     updateStates
     return true
-} 
+}
 
 ############################################################################
 # pickCon: select connector to dimension and distribute
@@ -214,14 +214,14 @@ proc validateParams {u widget} {
 proc pickCon { { firstRun false } } {
 
     global Con PoleCon beginspacing endspacing maxspacing infoMessage
-    
+
     # Turn off nodes if a connector is already selected
     if [info exists Con] { $Con setRenderAttribute PointMode None }
 
     # If a pole had been created (for the previous connector), delete it
     if [info exists PoleCon] { $PoleCon delete }
 
-    # If this is run at startup and a valid connector was selected, don't run this piece 
+    # If this is run at startup and a valid connector was selected, don't run this piece
     if { !$firstRun } {
         wm state . withdrawn
         set conMask [pw::Display createSelectionMask -requireConnector {} -blockConnector {Pole}]
@@ -292,11 +292,11 @@ proc pickCon { { firstRun false } } {
 proc autoDim { } {
 
     global Con infoMessage
-    
+
     if {![info exists Con] || ![colorCheck]} { exit }
-    
+
     set length [$Con getTotalLength]
-    
+
     #**********************************
     # Get these user inputs from a Tk interface
     global beginspacing
@@ -305,14 +305,14 @@ proc autoDim { } {
     global growthratio
     global gridlevels
     #**********************************
-    
+
     set infoMessages ""
     set errorMessages ""
-    
+
     lappend infoMessages "--------------------------------------\n"
     lappend infoMessages "[$Con getName] statistics\n"
     lappend infoMessages "--------------------------------------\n"
-    
+
     # Calculate number of begin layers
     if { $beginspacing > 0.0 && $beginspacing < $maxspacing } {
         set beginlayers [expr 1 + int(log($maxspacing / $beginspacing) / log($growthratio))]
@@ -321,7 +321,7 @@ proc autoDim { } {
         set beginlayers 0
         lappend errorMessages "No spacing set at start of connector!\n"
     }
-    
+
     # Calculate number of end layers
     if { $endspacing > 0.0 && $endspacing < $maxspacing } {
         set endlayers [expr 1 + int(log($maxspacing / $endspacing) / log($growthratio))]
@@ -330,7 +330,7 @@ proc autoDim { } {
         set endlayers 0
         lappend errorMessages "No spacing set at end of connector!\n"
     }
-    
+
     # Calculate total length of begin layers
     if { $beginlayers > 0 } {
         set beginheight [expr $beginspacing * (1 - pow($growthratio,$beginlayers)) / (1 - $growthratio)]
@@ -338,7 +338,7 @@ proc autoDim { } {
     } else {
         set beginheight 0
     }
-    
+
     # Calculate total length of end layers
     if { $endlayers > 0 } {
         set endheight [expr $endspacing * (1 - pow($growthratio,$endlayers)) / (1 - $growthratio)]
@@ -346,28 +346,28 @@ proc autoDim { } {
     } else {
         set endheight 0
     }
-    
+
     # Check validity of inputs relative to the length of the connector
     if { [expr $beginheight + $endheight] > $length } {
         lappend errorMessages "Error: Layer height is greater than connector length!\n"
         lappend errorMessages "Increase growth rate!\n"
     } else {
-    
+
         # Calculate initial connector dimension
         set ConDim [expr 2 + $beginlayers + $endlayers + int(($length-$beginheight-$endheight)/$maxspacing)]
         lappend infoMessages "Initial connector dimension = $ConDim\n"
-    
+
         # Possibly increase the dimension for grid sequencing
         set factor [expr pow(2,($gridlevels-1))]
         while {[expr fmod($ConDim-1,$factor)] != 0} { incr ConDim }
-    
+
         # Include the following information whether or not the dimension was actually adjusted.
         # This informs the user if the final dimension was the optimal dimension (no clustering towards the middle).
         if { $gridlevels > 1 } { lappend infoMessages "Adjusted connector dimension = $ConDim" }
-    
+
         # Dimension the connector
         $Con setDimension $ConDim
-    
+
         # Set the distribution
         $Con setDistribution 1 [pw::DistributionGrowth create]
         if { $beginheight > 0 } {
@@ -380,16 +380,16 @@ proc autoDim { } {
             [$Con getDistribution 1] setEndRate    $growthratio
             [$Con getDistribution 1] setEndLayers  $endlayers
         }
-    
+
     }
-    
+
     if [llength $errorMessages] {
         set allMessages [join [list $errorMessages $infoMessages]]
         set infoMessage [join $allMessages ""]
     } else {
         set infoMessage [join $infoMessages ""]
     }
-    
+
     pw::Display update
 }
 
@@ -439,12 +439,12 @@ if { [llength $ents(Connectors)] == 1} {
 # TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, POINTWISE DISCLAIMS
 # ALL WARRANTIES, EITHER EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED
 # TO, IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-# PURPOSE, WITH REGARD TO THIS SCRIPT.  TO THE MAXIMUM EXTENT PERMITTED 
-# BY APPLICABLE LAW, IN NO EVENT SHALL POINTWISE BE LIABLE TO ANY PARTY 
-# FOR ANY SPECIAL, INCIDENTAL, INDIRECT, OR CONSEQUENTIAL DAMAGES 
-# WHATSOEVER (INCLUDING, WITHOUT LIMITATION, DAMAGES FOR LOSS OF 
-# BUSINESS INFORMATION, OR ANY OTHER PECUNIARY LOSS) ARISING OUT OF THE 
-# USE OF OR INABILITY TO USE THIS SCRIPT EVEN IF POINTWISE HAS BEEN 
-# ADVISED OF THE POSSIBILITY OF SUCH DAMAGES AND REGARDLESS OF THE 
+# PURPOSE, WITH REGARD TO THIS SCRIPT.  TO THE MAXIMUM EXTENT PERMITTED
+# BY APPLICABLE LAW, IN NO EVENT SHALL POINTWISE BE LIABLE TO ANY PARTY
+# FOR ANY SPECIAL, INCIDENTAL, INDIRECT, OR CONSEQUENTIAL DAMAGES
+# WHATSOEVER (INCLUDING, WITHOUT LIMITATION, DAMAGES FOR LOSS OF
+# BUSINESS INFORMATION, OR ANY OTHER PECUNIARY LOSS) ARISING OUT OF THE
+# USE OF OR INABILITY TO USE THIS SCRIPT EVEN IF POINTWISE HAS BEEN
+# ADVISED OF THE POSSIBILITY OF SUCH DAMAGES AND REGARDLESS OF THE
 # FAULT OR NEGLIGENCE OF POINTWISE.
 #
