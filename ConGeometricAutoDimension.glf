@@ -75,8 +75,9 @@ grid [tk::message .f.m -textvariable infoMessage -background beige -bd 2 -relief
 
 grid [ttk::separator .f.s -orient horizontal] -column 0 -row 7 -columnspan 2 -sticky ew
 
-grid [ttk::button .f.ab -text "Apply"  -width $buttonWidthSmall -command autoDim ] -column 0 -row 8 -sticky w
-grid [ttk::button .f.db -text "Done"   -width $buttonWidthSmall -command done    ] -column 1 -row 8 -sticky e
+grid [ttk::button .f.pb -text "Preview" -width $buttonWidthSmall -command { autoDim true }  ] -column 0 -row 8 -sticky w
+grid [ttk::button .f.ab -text "Apply"   -width $buttonWidthSmall -command { autoDim false } ] -column 1 -row 8 -sticky e
+grid [ttk::button .f.db -text "Done"    -width $buttonWidthBig   -command done              ] -column 0 -row 9 -columnspan 2
 
 foreach w [winfo children .f] {grid configure $w -padx 5 -pady 5}
 
@@ -289,7 +290,7 @@ proc pickCon { { firstRun false } } {
 ############################################################################
 # Dimension and Distribute
 ############################################################################
-proc autoDim { } {
+proc autoDim { preview } {
 
     global Con infoMessage
 
@@ -365,6 +366,17 @@ proc autoDim { } {
         # This informs the user if the final dimension was the optimal dimension (no clustering towards the middle).
         if { $gridlevels > 1 } { lappend infoMessages "Adjusted connector dimension = $ConDim" }
 
+        #TODO: Add ability to preview the connector here without actually
+        #      applying the changes.
+        if { $preview } {
+          $Con setRenderAttribute PointMode None
+          set previewModifier [pw::Application begin Modify $Con]
+
+          $Con setRenderAttribute ColorMode Entity
+          $Con setColor #FF0000
+          $Con setRenderAttribute PointMode All
+        }
+
         # Dimension the connector
         $Con setDimension $ConDim
 
@@ -381,6 +393,14 @@ proc autoDim { } {
             [$Con getDistribution 1] setEndLayers  $endlayers
         }
 
+        if { $preview } {
+          lappend infoMessages "Preview mode enabled; press Apply to accept changes\n"
+
+          pw::Display update
+          after 3000
+          $previewModifier abort
+          $Con setRenderAttribute PointMode All
+        }
     }
 
     if [llength $errorMessages] {
