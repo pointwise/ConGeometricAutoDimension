@@ -214,10 +214,10 @@ proc validateParams {u widget} {
 ############################################################################
 proc pickCon { { firstRun false } } {
 
-    global Con PoleCon beginspacing endspacing maxspacing infoMessage
+    global Con origPointMode PoleCon beginspacing endspacing maxspacing infoMessage
 
-    # Turn off nodes if a connector is already selected
-    if [info exists Con] { $Con setRenderAttribute PointMode None }
+    # Reset PointMode if a connector is already selected
+    if [info exists Con] { $Con setRenderAttribute PointMode $origPointMode }
 
     # If a pole had been created (for the previous connector), delete it
     if [info exists PoleCon] { $PoleCon delete }
@@ -228,6 +228,9 @@ proc pickCon { { firstRun false } } {
         set conMask [pw::Display createSelectionMask -requireConnector {} -blockConnector {Pole}]
         pw::Display selectEntities -selectionmask $conMask -description "Select a connector." -single results
         set Con $results(Connectors); # Get the connector from the resultVar array
+        # Record the original PointMode rendering attribute to that it may be
+        # restored
+        set origPointMode [$Con getRenderAttribute PointMode]
     }
 
     if {[llength $Con] == 1} {
@@ -418,9 +421,9 @@ proc autoDim { preview } {
 ############################################################################
 proc done {} {
 
-    global Con PoleCon
+    global Con PoleCon origPointMode
 
-    if [info exists Con] { $Con setRenderAttribute PointMode None }
+    if [info exists Con] { $Con setRenderAttribute PointMode $origPointMode }
     if [info exists PoleCon] { $PoleCon delete }
 
     exit
@@ -447,6 +450,9 @@ updateStates
 pw::Display getSelectedEntities ents
 if { [llength $ents(Connectors)] == 1} {
   set Con $ents(Connectors)
+  # Record the original PointMode rendering attribute to that it may be
+  # restored
+  set origPointMode [$Con getRenderAttribute PointMode]
   pickCon true
 }
 
